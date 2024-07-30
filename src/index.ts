@@ -1,16 +1,11 @@
 import express, { NextFunction } from "express";
 import bunyan from "bunyan";
 import { v4 } from "uuid";
-import { LoggingBunyan } from "@google-cloud/logging-bunyan";
-
-const loggingBunyan = new LoggingBunyan();
+import { serialize } from "v8";
 
 const log = bunyan.createLogger({
   name: "gcp-lab",
-  streams: [
-    { stream: process.stdout, level: "info" },
-    loggingBunyan.stream("info"),
-  ],
+  serializers: bunyan.stdSerializers,
 });
 
 const app = express();
@@ -31,6 +26,7 @@ app.get("/", (req, res) => {
 });
 
 app.get("/status", (req, res) => {
+  log.info({ message: "It's aliiive!" });
   res.sendStatus(200);
 });
 

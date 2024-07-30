@@ -14,7 +14,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@google-cloud/logging-bunyan": "^5.1.0",
     "bunyan": "^1.8.15",
     "express": "^4.19.2",
     "uuid": "^10.0.0"
