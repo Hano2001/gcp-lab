@@ -1,10 +1,16 @@
 import express, { NextFunction } from "express";
 import bunyan from "bunyan";
 import { v4 } from "uuid";
+import { LoggingBunyan } from "@google-cloud/logging-bunyan";
+
+const loggingBunyan = new LoggingBunyan();
 
 const log = bunyan.createLogger({
   name: "gcp-lab",
-  serializers: bunyan.stdSerializers,
+  streams: [
+    { stream: process.stdout, level: "info" },
+    loggingBunyan.stream("info"),
+  ],
 });
 
 const app = express();
@@ -20,7 +26,8 @@ app.use((req: any, res, next: NextFunction) => {
 app.use(express.json());
 
 app.get("/", (req, res) => {
-  res.send("Hello World!");
+  throw new Error("NOT Hello world...");
+  //res.send("Hello World!");
 });
 
 app.get("/status", (req, res) => {
