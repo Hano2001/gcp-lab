@@ -31,6 +31,7 @@ app.get("/status", (req, res) => {
 });
 
 app.post("/payments", (req, res) => {
+  log.info({ message: "Payment received", req: req });
   res.json(req.body);
 });
 
