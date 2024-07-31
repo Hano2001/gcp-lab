@@ -51,6 +51,20 @@ app.post("/payments", async (req, res) => {
   const newPayment = { id: v4(), ...req.body };
   await payments.push(newPayment);
   await outbox.push({ carId: newPayment.carId });
+  const result = await fetch(
+    "https://gcp-lab-ynorbbawua-lz.a.run.app/payments",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ carId: newPayment.carId }),
+    }
+  );
+  if (result.status == 200)
+    outbox.filter((item) => {
+      item.carId != newPayment.carId;
+    });
   res.json(newPayment);
 });
 
