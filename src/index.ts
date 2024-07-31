@@ -10,6 +10,15 @@ type Payment = {
 
 const payments: Payment[] = [{ id: "1", carId: "whatevs", amount: 666 }];
 
+type Outbox = {
+  carId: string;
+};
+const outbox: Outbox[] = [
+  {
+    carId: "whatevs",
+  },
+];
+
 const log = bunyan.createLogger({
   name: "gcp-lab",
   serializers: bunyan.stdSerializers,
@@ -41,6 +50,7 @@ app.post("/payments", async (req, res) => {
   log.info({ message: "Payment received", req: req });
   const newPayment = { id: v4(), ...req.body };
   await payments.push(newPayment);
+  await outbox.push({ carId: newPayment.carId });
   res.json(newPayment);
 });
 
