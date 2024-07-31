@@ -27,7 +27,7 @@ app.use((req: any, res, next: NextFunction) => {
 
 app.use(express.json());
 
-app.get("/", (req, res) => {
+app.get("/payments", (req, res) => {
   log.info({ message: "GET payments", req: req });
   res.json(payments);
 });
@@ -37,9 +37,11 @@ app.get("/status", (req, res) => {
   res.sendStatus(200);
 });
 
-app.post("/payments", (req, res) => {
+app.post("/payments", async (req, res) => {
   log.info({ message: "Payment received", req: req });
-  res.json(req.body);
+  const newPayment = { id: v4(), ...req.body };
+  await payments.push(newPayment);
+  res.json(newPayment);
 });
 
 app.listen(port, () => {
