@@ -1,6 +1,8 @@
 import express, { NextFunction } from "express";
 import bunyan from "bunyan";
 import { v4 } from "uuid";
+import { drizzle } from "drizzle-orm/postgres-js";
+import * as schema from "./db/schema.js";
 
 type Payment = {
   id: string;
@@ -8,12 +10,12 @@ type Payment = {
   amount: number;
 };
 
-const payments: Payment[] = [{ id: "1", carId: "whatevs", amount: 666 }];
+const mockPayments: Payment[] = [{ id: "1", carId: "whatevs", amount: 666 }];
 
 type Outbox = {
   carId: string;
 };
-const outbox: Outbox[] = [
+const mockOutbox: Outbox[] = [
   {
     carId: "whatevs",
   },
@@ -23,6 +25,11 @@ const log = bunyan.createLogger({
   name: "gcp-lab",
   serializers: bunyan.stdSerializers,
 });
+const dbUrl = process.env.POSTGRES_URL!;
+
+const client = postgres(dbUrl);
+
+const db = drizzle(client, { schema });
 
 const app = express();
 const port = 3000;
@@ -38,7 +45,7 @@ app.use(express.json());
 
 app.get("/payments", (req, res) => {
   log.info({ message: "GET payments", req: req });
-  res.json(payments);
+  res.json(mockPayments);
 });
 
 app.get("/status", (req, res) => {
@@ -49,8 +56,8 @@ app.get("/status", (req, res) => {
 app.post("/payments", async (req, res) => {
   log.info({ message: "Payment received", req: req });
   const newPayment = { id: v4(), ...req.body };
-  await payments.push(newPayment);
-  await outbox.push({ carId: newPayment.carId });
+  await mockPayments.push(newPayment);
+  await mockOutbox.push({ carId: newPayment.carId });
   const result = await fetch(
     "https://gcp-lab-ynorbbawua-lz.a.run.app/payments",
     {
@@ -59,17 +66,18 @@ app.post("/payments", async (req, res) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ carId: newPayment.carId }),
-    },
+    }
   );
   if (result.status == 200)
-    outbox.filter((item) => {
+    mockOutbox.filter((item) => {
       item.carId != newPayment.carId;
     });
   res.json(newPayment);
 });
 
-app.listen(port, () => {
-  console.log(process.env.POSTGRES_URL);
+app.listen(port, async () => {
+  const res = await db.query.payments.findMany();
+  console.log(process.env.POSTGRES_URL, res);
   console.log(`Example app listening on port ${port}`);
 });
 
@@ -77,3 +85,6 @@ app.use((err: any, req: any, res: any, next: NextFunction) => {
   req.log.error({ message: err.message, err });
   res.status(500).json("Internal server error");
 });
+function postgres(dbUrl: string) {
+  throw new Error("Function not implemented.");
+}
