@@ -59,7 +59,7 @@ app.post("/payments", async (req, res) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ carId: newPayment.carId }),
-    }
+    },
   );
   if (result.status == 200)
     outbox.filter((item) => {
@@ -69,6 +69,7 @@ app.post("/payments", async (req, res) => {
 });
 
 app.listen(port, () => {
+  console.log(process.env.POSTGRES_URL);
   console.log(`Example app listening on port ${port}`);
 });
 
