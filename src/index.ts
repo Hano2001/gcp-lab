@@ -40,9 +40,13 @@ app.use((req: any, res, next: NextFunction) => {
 app.use(express.json());
 
 app.get("/payments", async (req, res) => {
-  log.info({ message: "GET payments", req: req });
-  const payments = await db.query.payments.findMany();
-  res.json(payments);
+  try {
+    log.info({ message: "GET payments", req: req });
+    const payments = await db.query.payments.findMany();
+    res.json(payments);
+  } catch (error) {
+    res.status(500).json("Failed to get payments from database");
+  }
 });
 
 app.get("/status", (req, res) => {
@@ -51,36 +55,42 @@ app.get("/status", (req, res) => {
 });
 
 app.post("/payments", async (req, res) => {
-  log.info({ message: "Payment received", req: req });
-  const newPayment = { ...req.body };
+  try {
+    log.info({ message: "Payment received", req: req });
+    const newPayment = { ...req.body };
 
-  const insertedPayment = await db.transaction(async (tx) => {
-    await tx.insert(schema.payments).values(newPayment);
-    await tx.insert(schema.paymentsOutbox).values({ carId: newPayment.carId });
+    const insertedPayment = await db.transaction(async (tx) => {
+      await tx.insert(schema.payments).values(newPayment);
+      await tx
+        .insert(schema.paymentsOutbox)
+        .values({ carId: newPayment.carId });
 
-    const insertedPayment = await tx.query.payments.findFirst({
-      where: eq(schema.payments.carId, newPayment.carId),
+      const insertedPayment = await tx.query.payments.findFirst({
+        where: eq(schema.payments.carId, newPayment.carId),
+      });
+      return insertedPayment;
     });
-    return insertedPayment;
-  });
 
-  const result = await fetch(
-    "https://gha-gcp-lab-ynorbbawua-lz.a.run.app/cars",
-    {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
+    const result = await fetch(
+      "https://gha-gcp-lab-ynorbbawua-lz.a.run.app/cars",
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ carId: insertedPayment!.carId }),
       },
-      body: JSON.stringify({ carId: insertedPayment!.carId }),
+    );
+    if (result.status == 200) {
+      await db
+        .delete(schema.paymentsOutbox)
+        .where(eq(schema.paymentsOutbox.carId, insertedPayment!.carId));
     }
-  );
-  if (result.status == 200) {
-    await db
-      .delete(schema.paymentsOutbox)
-      .where(eq(schema.paymentsOutbox.carId, insertedPayment!.carId));
-  }
 
-  res.json(insertedPayment);
+    res.json(insertedPayment);
+  } catch (error) {
+    res.status(500).json("Failed to post payment to database");
+  }
 });
 
 app.listen(port, async () => {
