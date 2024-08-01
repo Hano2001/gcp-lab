@@ -75,9 +75,9 @@ app.post("/payments", async (req, res) => {
     }
   );
   if (result.status == 200) {
-    db.delete(schema.paymentsOutbox).where(
-      eq(schema.paymentsOutbox.carId, insertedPayment!.carId)
-    );
+    await db
+      .delete(schema.paymentsOutbox)
+      .where(eq(schema.paymentsOutbox.carId, insertedPayment!.carId));
   }
 
   res.json(insertedPayment);
