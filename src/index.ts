@@ -70,7 +70,9 @@ app.post("/payments", async (req, res) => {
       });
       return insertedPayment;
     });
-
+    if (Math.random() <= 0.5) {
+      throw new Error("Oppsie daisy Patrick Swayze");
+    }
     const result = await fetch(
       "https://gha-gcp-lab-ynorbbawua-lz.a.run.app/cars",
       {
@@ -81,6 +83,7 @@ app.post("/payments", async (req, res) => {
         body: JSON.stringify({ carId: insertedPayment!.carId }),
       },
     );
+
     if (result.status == 200) {
       await db
         .delete(schema.paymentsOutbox)
