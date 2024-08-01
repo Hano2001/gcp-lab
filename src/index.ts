@@ -5,6 +5,7 @@ import { v4 } from "uuid";
 import { drizzle } from "drizzle-orm/postgres-js";
 import * as schema from "./db/schema.js";
 import postgres from "postgres";
+import { eq } from "drizzle-orm/pg-core/expressions";
 
 type Payment = {
   id: string;
@@ -12,16 +13,9 @@ type Payment = {
   amount: number;
 };
 
-const mockPayments: Payment[] = [{ id: "1", carId: "whatevs", amount: 666 }];
-
 type Outbox = {
   carId: string;
 };
-const mockOutbox: Outbox[] = [
-  {
-    carId: "whatevs",
-  },
-];
 
 const log = bunyan.createLogger({
   name: "gcp-lab",
@@ -45,9 +39,10 @@ app.use((req: any, res, next: NextFunction) => {
 
 app.use(express.json());
 
-app.get("/payments", (req, res) => {
+app.get("/payments", async (req, res) => {
   log.info({ message: "GET payments", req: req });
-  res.json(mockPayments);
+  const payments = await db.query.payments.findMany();
+  res.json(payments);
 });
 
 app.get("/status", (req, res) => {
@@ -57,9 +52,18 @@ app.get("/status", (req, res) => {
 
 app.post("/payments", async (req, res) => {
   log.info({ message: "Payment received", req: req });
-  const newPayment = { id: v4(), ...req.body };
-  await mockPayments.push(newPayment);
-  await mockOutbox.push({ carId: newPayment.carId });
+  const newPayment = { ...req.body };
+
+  const insertedPayment = await db.transaction(async (tx) => {
+    await tx.insert(schema.payments).values(newPayment);
+    await tx.insert(schema.paymentsOutbox).values({ carId: newPayment.carId });
+
+    const insertedPayment = await tx.query.payments.findFirst({
+      where: eq(schema.payments.carId, newPayment.carId),
+    });
+    return insertedPayment;
+  });
+
   const result = await fetch(
     "https://gcp-lab-ynorbbawua-lz.a.run.app/payments",
     {
@@ -67,19 +71,19 @@ app.post("/payments", async (req, res) => {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ carId: newPayment.carId }),
+      body: JSON.stringify({ carId: insertedPayment!.carId }),
     }
   );
-  if (result.status == 200)
-    mockOutbox.filter((item) => {
-      item.carId != newPayment.carId;
-    });
-  res.json(newPayment);
+  if (result.status == 200) {
+    db.delete(schema.paymentsOutbox).where(
+      eq(schema.paymentsOutbox.carId, insertedPayment!.carId)
+    );
+  }
+
+  res.json(insertedPayment);
 });
 
 app.listen(port, async () => {
-  const res = await db.query.payments.findMany();
-  console.log(process.env.POSTGRES_URL, res);
   console.log(`Example app listening on port ${port}`);
 });
 
