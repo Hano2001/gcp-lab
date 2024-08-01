@@ -17,6 +17,24 @@ type Outbox = {
   carId: string;
 };
 
+async function patchCar(carId: any) {
+  const result = await fetch(
+    "https://gha-gcp-lab-ynorbbawua-lz.a.run.app/cars",
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ carId: carId }),
+    },
+  );
+  if (result.status == 200) {
+    await db
+      .delete(schema.paymentsOutbox)
+      .where(eq(schema.paymentsOutbox.carId, carId));
+  }
+}
+
 const log = bunyan.createLogger({
   name: "gcp-lab",
   serializers: bunyan.stdSerializers,
@@ -73,27 +91,17 @@ app.post("/payments", async (req, res) => {
     if (Math.random() <= 0.5) {
       throw new Error("Oppsie daisy Patrick Swayze");
     }
-    const result = await fetch(
-      "https://gha-gcp-lab-ynorbbawua-lz.a.run.app/cars",
-      {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ carId: insertedPayment!.carId }),
-      },
-    );
-
-    if (result.status == 200) {
-      await db
-        .delete(schema.paymentsOutbox)
-        .where(eq(schema.paymentsOutbox.carId, insertedPayment!.carId));
-    }
+    await patchCar(insertedPayment?.carId);
 
     res.json(insertedPayment);
   } catch (error) {
     res.status(500).json("Failed to post payment to database");
   }
+});
+
+const outboxResult = await db.query.paymentsOutbox.findMany();
+outboxResult.forEach((row) => {
+  patchCar(row.carId);
 });
 
 app.listen(port, async () => {
