@@ -3,6 +3,7 @@ import bunyan from "bunyan";
 import { v4 } from "uuid";
 import { drizzle } from "drizzle-orm/postgres-js";
 import * as schema from "./db/schema.js";
+import postgres from "postgres";
 
 type Payment = {
   id: string;
@@ -85,6 +86,3 @@ app.use((err: any, req: any, res: any, next: NextFunction) => {
   req.log.error({ message: err.message, err });
   res.status(500).json("Internal server error");
 });
-function postgres(dbUrl: string) {
-  throw new Error("Function not implemented.");
-}
