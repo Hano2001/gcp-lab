@@ -32,7 +32,7 @@ const client = postgres(dbUrl);
 const db = drizzle(client, { schema });
 
 const app = express();
-const port = 3000;
+const port = 8080;
 
 app.use((req: any, res, next: NextFunction) => {
   req.log = log.child({ req_id: v4() }, true);
@@ -66,7 +66,7 @@ app.post("/payments", async (req, res) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ carId: newPayment.carId }),
-    }
+    },
   );
   if (result.status == 200)
     mockOutbox.filter((item) => {
