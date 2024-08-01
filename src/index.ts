@@ -65,9 +65,9 @@ app.post("/payments", async (req, res) => {
   });
 
   const result = await fetch(
-    "https://gcp-lab-ynorbbawua-lz.a.run.app/payments",
+    "https://gha-gcp-lab-ynorbbawua-lz.a.run.app/cars",
     {
-      method: "POST",
+      method: "PATCH",
       headers: {
         "Content-Type": "application/json",
       },
