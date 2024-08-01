@@ -17,6 +17,7 @@
   "license": "ISC",
   "dependencies": {
     "bunyan": "^1.8.15",
+    "dotenv": "^16.4.5",
     "drizzle-orm": "^0.32.1",
     "express": "^4.19.2",
     "postgres": "^3.4.4",

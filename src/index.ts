@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express, { NextFunction } from "express";
 import bunyan from "bunyan";
 import { v4 } from "uuid";
@@ -67,7 +68,7 @@ app.post("/payments", async (req, res) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ carId: newPayment.carId }),
-    },
+    }
   );
   if (result.status == 200)
     mockOutbox.filter((item) => {
