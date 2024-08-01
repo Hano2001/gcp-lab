@@ -8,6 +8,13 @@
       "when": 1722500549462,
       "tag": "0000_wise_gargoyle",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1722502826982,
+      "tag": "0001_oval_veda",
+      "breakpoints": true
     }
   ]
 }
