@@ -6,6 +6,7 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import * as schema from "./db/schema.js";
 import postgres from "postgres";
 import { eq } from "drizzle-orm/pg-core/expressions";
+import cors from "cors";
 
 type Payment = {
   id: string;
@@ -56,6 +57,7 @@ app.use((req: any, res, next: NextFunction) => {
 });
 
 app.use(express.json());
+app.use(cors());
 
 app.get("/payments", async (req, res) => {
   try {
